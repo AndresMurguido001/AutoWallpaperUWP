@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Windows.Graphics.Display;
 using Windows.Storage;
+using Windows.Storage.Streams;
 using Windows.UI.Xaml.Media.Imaging;
 using Windows.Web.Http;
 using Windows.Web.Http.Headers;
@@ -57,8 +58,9 @@ namespace AutoWallpaperUWP.Services
             return JsonConvert.DeserializeObject<ObservableCollection<Photo>>(responseBody);
         }
 
-        public async Task<Photo> GetRandomImageFromCollections(List<string> collectionIds)
+        public async Task<Photo> GetRandomImageFromCollections(IEnumerable<Collection> selectedCollections)
         {
+            IEnumerable<string> collectionIds = selectedCollections.Select(c => c.Id);
             string commaSeperatedList = string.Join(",", collectionIds);
             var response = await httpClient.GetAsync(new Uri($"{baseUri}/photos/random?collections={commaSeperatedList}"));
             response.EnsureSuccessStatusCode();
@@ -66,31 +68,39 @@ namespace AutoWallpaperUWP.Services
             return JsonConvert.DeserializeObject<Photo>(responseBody);
         }
 
+        public async Task<Photo> GetRandomImage()
+        {
+            var response = await httpClient.GetAsync(new Uri($"{baseUri}/photos/random"));
+            response.EnsureSuccessStatusCode();
+            var responseBody = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<Photo>(responseBody);
+        }
+
         /// <summary>
-        /// Downloads image for use with UserProfileService SetWallpaper
+        /// Downloads image to wallpapers/currentWallpaper
         /// </summary>
         /// <param name="uri"></param>
         /// <returns></returns>
-        public async Task<BitmapImage> LoadImage(Uri uri)
+        public async Task<StorageFile> LoadImage(Uri uri)
         {
-            BitmapImage bitmapImage = new BitmapImage();
+            StorageFolder localFolder = ApplicationData.Current.LocalFolder;
+            StorageFolder wallpapersFolder = await localFolder.CreateFolderAsync("wallpapers", CreationCollisionOption.OpenIfExists);
 
-            using (var response = await httpClient.GetAsync(uri))
+            StorageFile imageFile = await wallpapersFolder.CreateFileAsync("currentWallpaper", CreationCollisionOption.ReplaceExisting);
+
+            var image = await httpClient.GetAsync(uri);
+
+            using(var inputStream = await image.Content.ReadAsInputStreamAsync())
             {
-                response.EnsureSuccessStatusCode();
-
-                using (MemoryStream inputStream = new MemoryStream())
+                using(var outputStream = await imageFile.OpenAsync(FileAccessMode.ReadWrite))
                 {
-                    await inputStream.CopyToAsync(inputStream);
-                    bitmapImage.SetSource(inputStream.AsRandomAccessStream());
+                    await RandomAccessStream.CopyAndCloseAsync(inputStream, outputStream);
                 }
             }
-
-            return bitmapImage;
-            
+            return imageFile;
         }
 
-        private string GenerateOptimalResolutionUri(Photo wallpaperPhoto)
+        public Uri GenerateOptimalResolutionUri(Photo wallpaperPhoto)
         {
             var displayInformation = DisplayInformation.GetForCurrentView();
             var screenWidth = displayInformation.ScreenWidthInRawPixels;
@@ -98,7 +108,7 @@ namespace AutoWallpaperUWP.Services
             // Raw url is the base url for the image
             string baseUri = wallpaperPhoto.Urls["raw"];
             // Here we will append the width and DPR to the query params
-            return $"{baseUri}&w={screenWidth}&dpr=2";
+            return new Uri($"{baseUri}&w={screenWidth}&dpr=2");
         }
 
         public void Dispose()

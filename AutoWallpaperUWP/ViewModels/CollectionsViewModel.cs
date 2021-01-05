@@ -71,7 +71,7 @@ namespace AutoWallpaperUWP.ViewModels
                 
             } catch (Exception e)
             {
-                rootPage.DisplayError(e.Message);
+                rootPage.DisplayError("Error!", e.Message);
             }
         }
     }

@@ -1,4 +1,5 @@
 ﻿using AutoWallpaperUWP.Models;
+using AutoWallpaperUWP.Services;
 using AutoWallpaperUWP.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -9,6 +10,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.Storage;
 using Windows.System.UserProfile;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
@@ -30,10 +32,12 @@ namespace AutoWallpaperUWP.Views
     {
         MainPage rootPage = MainPage.Current;
         public CollectionsViewModel ViewModel { get; set; }
+        private UnsplashApiService unsplashApiService;
 
         public HomePage()
         {
             this.InitializeComponent();
+            unsplashApiService = new UnsplashApiService();
             this.ViewModel = new CollectionsViewModel();
             ViewModel.InitializeCollections();
         }
@@ -44,30 +48,64 @@ namespace AutoWallpaperUWP.Views
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void UpdateWallpaper_Click(object sender, RoutedEventArgs e)
+        private async void UpdateWallpaper_Click(object sender, RoutedEventArgs e)
         {
-            Debug.WriteLine(ViewModel.SelectedCollections.Count());
-            // User has selected at least 1 collection
-            //if (ViewModel.SelectedCollections.Count() > 0)
-            //{
+            bool wallpaperSet;
 
-            //}
-            //// User has not selected a collection
-            //else
-            //{
-
-            //}
-           
+            if (ViewModel.Collections.Count() > 0)
+            {
+                wallpaperSet = await SetRandomWallpaper(true);
+            }
+            else
+            {
+                wallpaperSet = await SetRandomWallpaper(false);
+            }
+            NotifyUserWallpaperStatus(wallpaperSet);
         }
 
-        private bool SetWallpaper(string wallpaperPhoto)
+        private void NotifyUserWallpaperStatus(bool wallpaperSet)
+        {
+            if (wallpaperSet)
+            {
+                rootPage.DisplayError("Success!", "Wallpaper was successfully changed");
+            }
+            else
+            {
+                rootPage.DisplayError("Error!", "Something went wrong");
+            }
+        }
+        /// <summary>
+        /// Sets a random wallpaper. 
+        /// </summary>
+        /// <param name="wallpaperPhoto"></param>
+        /// <returns></returns>
+        private async Task<bool> SetRandomWallpaper(bool fromCollections)
+        {
+            Photo wallpaperPhoto; 
+
+            if (fromCollections)
+            {
+                wallpaperPhoto = await unsplashApiService.GetRandomImageFromCollections(ViewModel.SelectedCollections);
+            }
+            else
+            {
+                wallpaperPhoto = await unsplashApiService.GetRandomImage();
+            }
+            // Downloads the random image to wallpapers/wallpaper
+            Uri completedWallpaperUri = unsplashApiService.GenerateOptimalResolutionUri(wallpaperPhoto);
+            StorageFile downloadedImage = await unsplashApiService.LoadImage(completedWallpaperUri);
+            return await SetWallpaper(downloadedImage);
+        }
+
+        
+        private async Task<bool> SetWallpaper(StorageFile wallpaperImage)
         {
             bool successful = false;
-            BitmapImage bitmapImage = new BitmapImage();
 
             if (UserProfilePersonalizationSettings.IsSupported())
             {
-
+                UserProfilePersonalizationSettings profileSettings = UserProfilePersonalizationSettings.Current;
+                successful = await profileSettings.TrySetWallpaperImageAsync(wallpaperImage);
             }
             return successful;
         }

@@ -34,12 +34,12 @@ namespace AutoWallpaperUWP
             Current = this;
             
         }
-        public async void DisplayError(string message)
+        public async void DisplayError(string title, string content)
         {
             errorDialog = new ContentDialog()
             {
-                Title = "Something went wrong...",
-                Content = message,
+                Title = title,
+                Content = content,
                 CloseButtonText = "OK"
             };
             await errorDialog.ShowAsync();
