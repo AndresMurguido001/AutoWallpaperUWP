@@ -1,22 +1,28 @@
-﻿using AutoWallpaperUWP.Models;
-using Newtonsoft.Json;
+﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Windows.ApplicationModel.Background;
 using Windows.Graphics.Display;
 using Windows.Storage;
 using Windows.Storage.Streams;
 using Windows.UI.Xaml.Media.Imaging;
 using Windows.Web.Http;
 using Windows.Web.Http.Headers;
+using AutoWallpaper.Background.Models;
 
 namespace AutoWallpaperUWP.Services
 {
-    public class UnsplashApiService : IDisposable
+    /// <summary>
+    /// WallpaperService will handle the main logic behind fetching,
+    /// downloading, and setting the images used for desktop wallpaper
+    /// </summary>
+    public class WallpaperService : IBackgroundTask
     {
         private HttpClient httpClient;
         private string baseUri = "https://api.unsplash.com";
@@ -25,7 +31,7 @@ namespace AutoWallpaperUWP.Services
         
         readonly ApplicationDataContainer localSettings;
 
-        public UnsplashApiService()
+        public WallpaperService()
         {
             localSettings = ApplicationData.Current.LocalSettings;
 
@@ -38,8 +44,11 @@ namespace AutoWallpaperUWP.Services
                 var headers = httpClient.DefaultRequestHeaders;
                 headers.Add("Authorization", $"Client-ID {unsplashCreds}");
             }
-            
+        }
 
+        public void Run(IBackgroundTaskInstance taskInstance)
+        {
+            Debug.WriteLine("Background " + taskInstance.Task.Name + " Starting...");
         }
 
         public async Task<ObservableCollection<Collection>> ListCollections() 
@@ -115,5 +124,6 @@ namespace AutoWallpaperUWP.Services
         {
             this.httpClient.Dispose();
         }
+
     }
 }

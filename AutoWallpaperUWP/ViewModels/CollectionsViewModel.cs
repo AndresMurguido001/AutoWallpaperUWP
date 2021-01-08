@@ -1,5 +1,4 @@
-﻿using AutoWallpaperUWP.Models;
-using AutoWallpaperUWP.Services;
+﻿using AutoWallpaperUWP.Services;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -10,14 +9,14 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using Windows.Web.Http;
+using AutoWallpaper.Background.Models;
 
 namespace AutoWallpaperUWP.ViewModels
 {
     public class CollectionsViewModel : INotifyPropertyChanged
     {
         MainPage rootPage = MainPage.Current;
-        private readonly UnsplashApiService unsplashApi = new UnsplashApiService();
+        private readonly WallpaperService unsplashApi = new WallpaperService();
         private ObservableCollection<Collection> sampleCollections;
 
         public event PropertyChangedEventHandler PropertyChanged;

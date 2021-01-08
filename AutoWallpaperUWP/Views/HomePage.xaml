@@ -6,11 +6,14 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    xmlns:myTypes="using:AutoWallpaperUWP.Models"
+    xmlns:myTypes="using:AutoWallpaper.Background.Models"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
     <ScrollViewer Padding="20">
         <RelativePanel>
             <Button x:Name="UpdateWallpaper" Content="Update Wallpaper" Click="UpdateWallpaper_Click" RelativePanel.AlignRightWithPanel="True" />
+            <Button x:Name="RegisterTask" Content="Register Task" Click="RegisterTask_Click" />
+            <Button x:Name="UnregisterTask" Content="Unregister Task" Click="UnregisterTask_Click" RelativePanel.RightOf="RegisterTask" Margin="10 0 0 0" />
+            <Button x:Name="SignalButton" Content="Signal" Click="SignalBackgroundTask" RelativePanel.RightOf="UnregisterTask" Margin="10 0 0 0"/>
             <GridView 
                     x:Name="CollectionGridView" 
                     ItemsSource="{x:Bind ViewModel.Collections, Mode=OneWay}" 

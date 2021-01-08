@@ -34,6 +34,7 @@ namespace AutoWallpaperUWP
             Current = this;
             
         }
+
         public async void DisplayError(string title, string content)
         {
             errorDialog = new ContentDialog()
